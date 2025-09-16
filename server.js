@@ -10,6 +10,7 @@ mongoose.connect('mongodb://localhost:27017/CoutureCollection')
 .catch(err => console.error('MongoDB connection error:',err));
 
 app.use(express.json())
+
 app.use('/api/auth',authRoutes);
 
 app.get('/', (req, res) => {

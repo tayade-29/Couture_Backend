@@ -4,6 +4,8 @@ const mongoose=require('mongoose');
 const User=require('../models/User');
 const axios = require('axios');
 const bcrypt = require('bcrypt'); 
+const jwt = require('jsonwebtoken');
+
 
 
 async function fetchIndiaLocation(pin){
@@ -39,17 +41,19 @@ router.post('/register',async (req, res) =>{
         country = loc.country;
       }
     }  
-    let userExist=await User.findOne({email}).exec();
+    const cleanEmail = String(email).trim().toLowerCase();
+    let userExist=await User.findOne({cleanEmail}).exec();
     if(userExist) return res.status(400).send("Email is already used");
+    const hashed = await bcrypt.hash(password, 10);
     const user = new User({
       name,
       phoneNo,
-      email,
+      email:cleanEmail,
       zipcode,
       city,
       state,
       country,
-      password,
+      password:hashed,
     });
     await user.save();
     console.log("Saved user",user);
@@ -61,4 +65,28 @@ router.post('/register',async (req, res) =>{
     }
     
 });
+
+router.post('/login',async(req,res) =>{
+    try{
+    if (!req.body) return res.status(400).json({ error: 'Missing request body' });
+    const { email, password } = req.body;
+    if (!email || !password) { return res.status(400).json({ error: 'Missing fields' }); }
+    const cleanEmail=String(email).trim().toLowerCase();
+    const user =await User.findOne({email:cleanEmail}).exec()
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+    const token = jwt.sign(
+    { id: user._id, email: user.email },   
+    process.env.JWT_SECRET,                
+    { expiresIn: '1h' }                    
+);
+res.json({ success: true, token });
+    }
+    catch(error){
+        console.log(error);
+        return res.status(400).send("Error Try again")
+    }
+});
+
 module.exports=router;
