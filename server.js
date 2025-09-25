@@ -1,6 +1,8 @@
 const mongoose=require('mongoose');
+const cors = require('cors');
 const express=require('express');
 const authRoutes =require('./routes/auth')
+require('dotenv').config();
 const PORT=3000;
 
 const app=express();
@@ -8,6 +10,10 @@ const app=express();
 mongoose.connect('mongodb://localhost:27017/CoutureCollection')
 .then(()=> console.log('MongoDB connected'))
 .catch(err => console.error('MongoDB connection error:',err));
+
+app.use(cors({
+    origin: "http://localhost:5173", 
+}));
 
 app.use(express.json())
 
