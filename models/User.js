@@ -15,6 +15,7 @@ const UserSchema =new mongoose.Schema({
         required:true,
         pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
     },
+    isAdmin: { type: Boolean, default: false },
     zipcode: {
     type: String,
     required: true,
