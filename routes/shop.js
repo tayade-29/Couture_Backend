@@ -60,6 +60,13 @@ Created At: ${order.createdAt}
       text: mailText,
     });
 
+    await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to : req.user.email,
+        subject: "Your Order is Received",
+        text: `Dear ${req.user.name},\n\nThank you for your order! We have received your request for ${quantity} x ${product}. Our team will process your order and get back to you shortly.\n\nBest regards,\nCouture Team`
+    });
+
     res.json({ message: "Order placed & email sent", orderId: order._id });
   } catch (err) {
     console.error(err);
