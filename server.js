@@ -2,6 +2,7 @@ const mongoose=require('mongoose');
 const cors = require('cors');
 const express=require('express');
 const authRoutes =require('./routes/auth')
+const OrderRoutes =require('./routes/shop')
 require('dotenv').config();
 const PORT=3000;
 
@@ -18,6 +19,8 @@ app.use(cors({
 app.use(express.json())
 
 app.use('/api/auth',authRoutes);
+app.use("/api/orders", OrderRoutes);
+
 
 app.get('/', (req, res) => {
   res.send('Server is running!');
