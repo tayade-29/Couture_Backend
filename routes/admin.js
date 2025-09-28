@@ -22,7 +22,7 @@ router.post("/products", auth, upload.single("image"), async (req, res) => {
             description,
             price,
             quantity,
-            imageUrl: req.file.path // Cloudinary URL
+            imageUrl: req.file.path 
         });
 
         await product.save();
