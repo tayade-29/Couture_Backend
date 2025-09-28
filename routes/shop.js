@@ -62,27 +62,30 @@ Order ID: ${order._id}
 Created At: ${order.createdAt}
     `;
 
-    // ✅ Setup SendGrid transporter
-    const transporter = nodemailer.createTransport(
-      nodemailerSendgrid({
-        apiKey: process.env.SENDGRID_API_KEY, // must exist in Render env
-      })
-    );
+// prepare email transporter
+const nodemailer = require("nodemailer");
+const nodemailerSendgrid = require("nodemailer-sendgrid").default;
 
-    // Send order notification to admin
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: process.env.EMAIL_TO,
-      subject: `New Shop Request from ${req.user.name}`,
-      text: mailText,
-    });
+const transporter = nodemailer.createTransport(
+  nodemailerSendgrid({
+    apiKey: process.env.SENDGRID_API_KEY,
+  })
+);
 
-    // Send order confirmation to customer
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: req.user.email,
-      subject: `Order Confirmation - ${product.title}`,
-      text: `Dear ${req.user.name},
+// Send admin notification
+await transporter.sendMail({
+  from: process.env.EMAIL_FROM,
+  to: process.env.EMAIL_TO,
+  subject: `New Shop Request from ${req.user.name}`,
+  text: mailText,
+});
+
+// Send confirmation to user
+await transporter.sendMail({
+  from: process.env.EMAIL_FROM,
+  to: req.user.email,
+  subject: `Order Confirmation - ${product.title}`,
+  text: `Dear ${req.user.name},
 
 Thank you for shopping with Couture!
 
@@ -91,14 +94,13 @@ We are delighted to confirm that we have received your order for:
 - Price: ₹${product.price}
 
 Your order is now being processed, and you will receive an update once it is ready to be shipped.  
-If you have any questions or special requests regarding this order, feel free to reply to this email—we are always happy to assist you.
 
 Delivery Address:
 ${deliveryAddress}
 
 Warm regards,  
-The Couture Team`,
-    });
+The Couture Team`
+});
 
     res.json({
       message: "Order placed & email sent",
