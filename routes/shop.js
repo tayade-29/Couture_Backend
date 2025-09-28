@@ -59,27 +59,29 @@ Order ID: ${order._id}
 Created At: ${order.createdAt}
         `;
 
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
+      const nodemailer = require("nodemailer");
+const nodemailerSendgrid = require("nodemailer-sendgrid");
+
+const transporter = nodemailer.createTransport(
+  nodemailerSendgrid({
+    apiKey: process.env.SENDGRID_API_KEY,
+  })
+);
 
 
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: process.env.EMAIL_TO,
-            subject: `New Shop Request from ${req.user.name}`,
-            text: mailText,
-        });
 
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: req.user.email,
-            subject: `Order Confirmation - ${product.title}`,
-            text: `Dear ${req.user.name},
+      await transporter.sendMail({
+  from: process.env.EMAIL_FROM,
+  to: process.env.EMAIL_TO,
+  subject: `New Shop Request from ${req.user.name}`,
+  text: mailText,
+});
+
+await transporter.sendMail({
+  from: process.env.EMAIL_FROM,
+  to: req.user.email,
+  subject: `Order Confirmation - ${product.title}`,
+  text: `Dear ${req.user.name},
 
 Thank you for shopping with Couture!
 
@@ -97,7 +99,8 @@ We truly appreciate your trust in Couture and look forward to serving you again.
 
 Warm regards,  
 The Couture Team`
-        });
+});
+
 
 
         res.json({
