@@ -4,7 +4,7 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const nodemailer = require("nodemailer");
-const auth = require("../middleware/auth"); 
+const auth = require("../middleware/auth");
 require('dotenv').config();
 
 router.post("/", auth, async (req, res) => {
@@ -27,7 +27,7 @@ router.post("/", auth, async (req, res) => {
         // create order
         const order = await Order.create({
             userId: req.user._id,
-            productId: productId,
+            product: product.title,
             quantity,
             message,
             deliveryAddress
@@ -47,11 +47,11 @@ Phone: ${req.user.phoneNo || 'N/A'}
 Address: ${req.user.city || ''}, ${req.user.state || ''}, ${req.user.country || ''} - ${req.user.zipcode || ''}
 
 Order Details: 
-  Product: ${product.title}
-  Price: ₹${product.price}
-  Quantity: ${quantity}
-  Message: ${message || 'N/A'}
-  Delivery Address: ${deliveryAddress}    
+Product: ${product.title}
+Price: ₹${product.price}
+Quantity: ${quantity}
+Message: ${message || 'N/A'}
+Delivery Address: ${deliveryAddress}    
 
 Order ID: ${order._id}
 Created At: ${order.createdAt}
@@ -65,7 +65,7 @@ Created At: ${order.createdAt}
             },
         });
 
-       
+
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: process.env.EMAIL_TO,
@@ -76,14 +76,32 @@ Created At: ${order.createdAt}
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: req.user.email,
-            subject: "Your Order is Received",
-            text: `Dear ${req.user.name},\n\nThank you for your order! We have received your request for ${quantity} x ${product.title}. Our team will process your order and get back to you shortly.\n\nBest regards,\nCouture Team`
+            subject: `Order Confirmation - ${product.title}`,
+            text: `Dear ${req.user.name},
+
+Thank you for shopping with Couture!
+
+We are delighted to confirm that we have received your order for:
+- ${quantity} × ${product.title}
+- Price: ₹${product.price}
+
+Your order is now being processed, and you will receive an update once it is ready to be shipped.  
+If you have any questions or special requests regarding this order, feel free to reply to this email—we are always happy to assist you.
+
+Delivery Address:
+${deliveryAddress}
+
+We truly appreciate your trust in Couture and look forward to serving you again.
+
+Warm regards,  
+The Couture Team`
         });
 
-        res.json({ 
-            message: "Order placed & email sent", 
+
+        res.json({
+            message: "Order placed & email sent",
             orderId: order._id,
-            productTitle: product.title 
+            productTitle: product.title
         });
 
     } catch (err) {
