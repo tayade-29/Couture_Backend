@@ -27,7 +27,7 @@ router.post("/", auth, async (req, res) => {
         // create order
         const order = await Order.create({
             userId: req.user._id,
-            product: product.title,
+            product,
             quantity,
             message,
             deliveryAddress
