@@ -63,19 +63,22 @@ Created At: ${order.createdAt}
 const nodemailerSendgrid = require("nodemailer-sendgrid");
 
 const transporter = nodemailer.createTransport(
-  nodemailerSendgrid({
+  require("nodemailer-sendgrid").default({
     apiKey: process.env.SENDGRID_API_KEY,
   })
 );
 
 
 
-      await transporter.sendMail({
+
+
+await transporter.sendMail({
   from: process.env.EMAIL_FROM,
   to: process.env.EMAIL_TO,
   subject: `New Shop Request from ${req.user.name}`,
   text: mailText,
 });
+
 
 await transporter.sendMail({
   from: process.env.EMAIL_FROM,
