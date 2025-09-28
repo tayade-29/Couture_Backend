@@ -6,16 +6,22 @@ const User = require('../models/User');
 const auth = require("../middleware/auth");
 
 const sgMail = require("@sendgrid/mail");
-sgMail.setApiKey(process.env.SENDGRID_API_KEY); // From Render environment variables
+sgMail.setApiKey(process.env.SENDGRID_API_KEY); // ✅ Must be set in Render
 
+// Helper function to send emails
 const sendEmail = async (to, subject, text) => {
   const msg = {
     to,
-    from: process.env.EMAIL_FROM, // Verified sender email in SendGrid
+    from: process.env.EMAIL_FROM, // Must be verified sender in SendGrid
     subject,
     text,
   };
-  await sgMail.send(msg);
+  try {
+    await sgMail.send(msg);
+  } catch (err) {
+    console.error("SendGrid email error:", err.response ? err.response.body : err);
+    throw err;
+  }
 };
 
 router.post("/", auth, async (req, res) => {
@@ -65,18 +71,20 @@ Order ID: ${order._id}
 Created At: ${order.createdAt}
     `;
 
+    // Send to admin
     await sendEmail(process.env.EMAIL_TO, `New Shop Request from ${req.user.name}`, mailText);
 
+    // Send to customer
     await sendEmail(req.user.email, `Order Confirmation - ${product.title}`, `
 Dear ${req.user.name},
 
 Thank you for shopping with Couture!
 
-We are delighted to confirm that we have received your order for:
+We have received your order:
 - ${quantity} × ${product.title}
 - Price: ₹${product.price}
 
-Your order is now being processed.
+Your order is being processed.
 
 Delivery Address:
 ${deliveryAddress}
