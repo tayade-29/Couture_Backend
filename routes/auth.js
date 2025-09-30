@@ -1,41 +1,35 @@
-const express=require('express');
-const router=express.Router();
-const mongoose=require('mongoose');
-const User=require('../models/User');
+const express = require('express');
+const router = express.Router();
+const User = require('../models/User');
 const axios = require('axios');
 const bcrypt = require('bcrypt'); 
 const jwt = require('jsonwebtoken');
 
-
-
-async function fetchIndiaLocation(pin){
-    try{
-        const res =await axios.get(`https://api.postalpincode.in/pincode/${pin}`);
-        const data=res.data;
-        if(Array.isArray(data)&& data[0].Status==='Success' && data[0].PostOffice.length>0){
-            const po= data[0].PostOffice[0];
-            return{
-                city:po.District || '',
-                state:po.State || '',
-                country:po.Country ||'',
+// Helper to fetch location
+async function fetchIndiaLocation(pin) {
+    try {
+        const res = await axios.get(`https://api.postalpincode.in/pincode/${pin}`);
+        const data = res.data;
+        if (Array.isArray(data) && data[0].Status === 'Success' && data[0].PostOffice.length > 0) {
+            const po = data[0].PostOffice[0];
+            return {
+                city: po.District || '',
+                state: po.State || '',
+                country: po.Country || '',
             };
         }
-    }
-    catch(err){
+    } catch (err) {
         console.log(`Error occured while processing ${err}`);
     }
     return null;
 }
 
+// Register
 router.post('/register', async (req, res) => {
     try {
         const { name, phoneNo, email, zipcode, password } = req.body;
+        let city = '', state = '', country = '';
 
-        let city = '';
-        let state = '';
-        let country = '';
-
-        // Validate zip
         if (/^[0-9]{6}$/.test(zipcode)) {
             const loc = await fetchIndiaLocation(zipcode);
             if (loc) {
@@ -46,19 +40,13 @@ router.post('/register', async (req, res) => {
         }
 
         const cleanEmail = String(email).trim().toLowerCase();
-
-        // Check if user already exists
         let userExist = await User.findOne({ email: cleanEmail }).exec();
         if (userExist) return res.status(400).send("Email is already used");
 
-        // Hash password
         const hashed = await bcrypt.hash(password, 10);
-
-        // Check if this is the first user
         const userCount = await User.countDocuments();
-        const isAdmin = userCount === 0; // First user → admin
+        const isAdmin = userCount === 0;
 
-        // Create new user
         const user = new User({
             name,
             phoneNo,
@@ -68,21 +56,39 @@ router.post('/register', async (req, res) => {
             state,
             country,
             password: hashed,
-            isAdmin // NEW FIELD
+            isAdmin
         });
 
         await user.save();
-        console.log("Saved user", user);
 
-        return res.json({ ok: true, isAdmin }); // return isAdmin for debug
-    }
-    catch (err) {
+        const token = jwt.sign(
+            { id: user._id, email: user.email, isAdmin: user.isAdmin },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        return res.json({
+            success: true,
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phoneNo: user.phoneNo,
+                city: user.city,
+                state: user.state,
+                country: user.country,
+                zipcode: user.zipcode,
+                isAdmin: user.isAdmin
+            }
+        });
+    } catch (err) {
         console.log(err);
         return res.status(400).send("Error Try again");
     }
 });
 
-
+// Login
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -95,21 +101,30 @@ router.post('/login', async (req, res) => {
         if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
         const token = jwt.sign(
-            {
-                id: user._id,
-                email: user.email,
-                isAdmin: user.isAdmin  
-            },
+            { id: user._id, email: user.email, isAdmin: user.isAdmin },
             process.env.JWT_SECRET,
             { expiresIn: '1h' }
         );
 
-        res.json({ success: true, token });
+        res.json({
+            success: true,
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phoneNo: user.phoneNo,
+                city: user.city,
+                state: user.state,
+                country: user.country,
+                zipcode: user.zipcode,
+                isAdmin: user.isAdmin
+            }
+        });
     } catch (error) {
         console.log(error);
         return res.status(400).json({ message: "Error Try again" });
     }
 });
 
-
-module.exports=router;
+module.exports = router;
