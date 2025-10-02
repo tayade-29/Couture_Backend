@@ -25,6 +25,7 @@ async function fetchIndiaLocation(pin) {
 }
 
 // Register
+// Register
 router.post('/register', async (req, res) => {
     try {
         const { name, phoneNo, email, zipcode, password } = req.body;
@@ -41,7 +42,9 @@ router.post('/register', async (req, res) => {
 
         const cleanEmail = String(email).trim().toLowerCase();
         let userExist = await User.findOne({ email: cleanEmail }).exec();
-        if (userExist) return res.status(400).send("Email is already used");
+        if (userExist) {
+            return res.status(400).json({ message: "Email is already used" });
+        }
 
         const hashed = await bcrypt.hash(password, 10);
         const userCount = await User.countDocuments();
@@ -84,9 +87,10 @@ router.post('/register', async (req, res) => {
         });
     } catch (err) {
         console.log(err);
-        return res.status(400).send("Error Try again");
+        return res.status(400).json({ message: "Error Try again" });
     }
 });
+
 
 // Login
 router.post('/login', async (req, res) => {
